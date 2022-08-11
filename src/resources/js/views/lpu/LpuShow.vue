@@ -1,8 +1,28 @@
 <template>
     <main-layout>
+        <pop-up :show="showPopUp">
+            <template v-slot:header>
+                Требуется подтверждение:
+            </template>
+            <template v-slot:body>
+                <div> Удалить эту версию файла?
+                </div>
+            </template>
+            <template v-slot:footer>
+                <div class="line">
+                    <div style="display:inline-block; width: 40%">
+                        <button-red @click="deleteItem(); showPopUp = false;">да</button-red>
+                    </div>
+                    <div style="display:inline-block; width: 40%">
+                        <button-green @click="showPopUp = false;">нет
+                        </button-green>
+                    </div>
+                </div>
+            </template>
+        </pop-up>
         <a href="/lpu/create" style="text-decoration: none;">новая версия</a>
         <a :href="'/api/v1/lpu/' + this.$route.params.id + '/download'" style="text-decoration: none; margin-left: 10px; color: #0b2e13">скачать</a>
-
+<a style="text-decoration: none; margin-left: 10px;color: darkred" @click="askDelete">удалить</a>
 
         <lpu-form :file="file" :version="version" @save="saveEvent($event)"></lpu-form>
     </main-layout>
@@ -12,15 +32,18 @@
 import MainLayout from "../layouts/MainLayout";
 import LpuForm from "../../components/lpu/LpuForm";
 import ButtonGreen from "../../components/UI/ButtonGreen";
+import PopUp from "../../components/UI/PopUp";
+import ButtonRed from "../../components/UI/ButtonRed";
 
 export default {
     name: "LpuShow",
-    components: {ButtonGreen, LpuForm, MainLayout},
+    components: {ButtonRed, PopUp, ButtonGreen, LpuForm, MainLayout},
     data() {
         return {
             lpu: [],
             file: null,
             version: '',
+            showPopUp: false
         }
     },
     methods: {
@@ -32,7 +55,11 @@ export default {
                 if (response.data.success === true) {
                     this.file = response.data.data.file;
                     this.version = response.data.data.version;
+                } else {
+                    window.location.href = '/'
                 }
+            }).catch(() => {
+                window.location.href = '/'
             })
         },
         saveEvent($event) {
@@ -53,6 +80,19 @@ export default {
                     }
                 } else {
                     console.log('LpuShow error lpu update ', response.data)
+                }
+            })
+        },
+        askDelete() {
+            this.showPopUp = true;
+        },
+        deleteRequest() {
+            return axios.delete('/api/v1/lpu/' + this.$route.params.id)
+        },
+        deleteItem() {
+            this.deleteRequest().then(response => {
+                if (response.data.success === true) {
+                    this.$router.push('/');
                 }
             })
         }
